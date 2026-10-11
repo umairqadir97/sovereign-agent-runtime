@@ -1,0 +1,90 @@
+name: CI Quality & Compliance Matrix
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-typecheck:
+    name: Linting & Static Typing Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install uv package manager
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+          enable-cache: true
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Install dependencies and tools
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
+
+      - name: Run Ruff Linting
+        run: |
+          uv run ruff check .
+
+      - name: Run Ruff Format Verification
+        run: |
+          uv run ruff format --check .
+
+      - name: Run MyPy Static Type Analysis
+        run: |
+          uv run mypy src
+
+  test-suite:
+    name: Pytest Unit & Integration Tests (Python 3.12)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install uv package manager
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+          enable-cache: true
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
+
+      - name: Execute Pytest Suite with Coverage
+        run: |
+          uv run pytest -v tests/
+
+  container-build:
+    name: Distroless Docker Build Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build production distroless image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: sovereign-agent-runtime:ci-test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
