@@ -19,30 +19,25 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install uv package manager
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v5
         with:
           version: "latest"
-          enable-cache: true
+          enable-cache: false
 
       - name: Set up Python 3.12
         run: uv python install 3.12
 
       - name: Install dependencies and tools
-        run: |
-          uv venv
-          uv pip install -e ".[dev]"
+        run: uv sync --all-extras
 
       - name: Run Ruff Linting
-        run: |
-          uv run ruff check .
+        run: uv run ruff check .
 
       - name: Run Ruff Format Verification
-        run: |
-          uv run ruff format --check .
+        run: uv run ruff format --check .
 
       - name: Run MyPy Static Type Analysis
-        run: |
-          uv run mypy src
+        run: uv run mypy src
 
   test-suite:
     name: Pytest Unit & Integration Tests (Python 3.12)
@@ -52,22 +47,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install uv package manager
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v5
         with:
           version: "latest"
-          enable-cache: true
+          enable-cache: false
 
       - name: Set up Python 3.12
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: |
-          uv venv
-          uv pip install -e ".[dev]"
+        run: uv sync --all-extras
 
       - name: Execute Pytest Suite with Coverage
-        run: |
-          uv run pytest -v tests/
+        run: uv run pytest -v tests/
 
   container-build:
     name: Distroless Docker Build Verification
